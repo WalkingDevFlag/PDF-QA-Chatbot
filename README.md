@@ -19,7 +19,7 @@ This Streamlit app is designed to perform Q&A on the content of a PDF document u
 ### Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/WalkingDevFlag/PDF-QA-Chatbot
 cd <repository-directory>
 ```
 
