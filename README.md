@@ -97,3 +97,5 @@ pip install langchain-huggingface
 - [IBM WatsonX](https://www.ibm.com/cloud/watsonx) for API and LLM capabilities.
 - [LangChain](https://github.com/hwchase17/langchain) for document loading, embeddings, and retrieval chains.
 - [Streamlit](https://streamlit.io/) for the user interface and chat capabilities.
+- Generate you WatsonX API-KEYS [here](https://cloud.ibm.com/iam/apikeys)
+- Get you Project_id [here](https://eu-de.dataplatform.cloud.ibm.com/wx/home?context=wx)
