@@ -1,0 +1,35 @@
+Conda env
+
+1) conda create --name watsonx python=3.10
+
+2) conda activate watsonx
+
+3) pip install langchain 
+
+4) pip install streamlit
+
+5) pip install ibm-watson-machine-learning
+
+6) pip install wxai-langchain==0.0.4
+
+7) pip install ibm-generative-ai[langchain]
+
+8) pip install langchain-community
+
+9) pip install langchain-ibm
+
+10) pip install ipykernel 
+
+11) python -m ipykernel install --user --name watsonx
+
+12) pip install pypdf
+
+13) pip install sentence-transformers
+
+14) pip install langchain-huggingface
+
+
+WatsonX:
+API-Key: PexP1lzw90yxJF7ouyKrlX4F2mn4-xKswqe5aKSs7qU_
+Project-ID: dada0dd9-2144-4a55-8a58-5ed9e478545e
+URL: https://eu-de.ml.cloud.ibm.com

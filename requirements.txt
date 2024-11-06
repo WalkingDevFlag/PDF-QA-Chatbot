@@ -1,0 +1,12 @@
+langchain
+streamlit
+ibm-watson-machine-learning
+wxai-langchain==0.0.4
+ibm-generative-ai[langchain]
+langchain-community
+langchain-ibm
+ipykernel
+pypdf
+sentence-transformers
+langchain-huggingface
+python-dotenv
