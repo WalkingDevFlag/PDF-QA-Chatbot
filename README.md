@@ -47,10 +47,12 @@ WATSONX_APIKEY=your_watsonx_apikey
 WATSONX_URL=your_watsonx_url
 WATSONX_MODEL_ID=your_model_id
 WATSONX_PROJECT_ID=your_project_id
-PDF_PATH=path_to_your_pdf_file
 ```
-
 Replace each placeholder with your actual IBM WatsonX API key, URL, Model ID, Project ID, and the path to your PDF file.
+
+### Step 5: Add the pdf files in the resources directory
+
+Make sure the pdfs you want to run on are present in the "resources" directory
 
 ## Usage
 
@@ -73,23 +75,13 @@ To create a Conda environment with the necessary packages, follow these commands
 ```bash
 conda create --name watsonx python=3.10
 conda activate watsonx
-pip install langchain
-pip install streamlit
-pip install ibm-watson-machine-learning
-pip install wxai-langchain==0.0.4
-pip install ibm-generative-ai[langchain]
-pip install langchain-community
-pip install langchain-ibm
-pip install ipykernel
-pip install pypdf
-pip install sentence-transformers
-pip install langchain-huggingface
+pip install -r requirements.txt
 ```
 
 ## File Structure
 
 - **app.py**: Main script to run the Streamlit app.
-- **.env**: Environment file containing IBM WatsonX credentials and PDF path.
+- **.env**: Environment file containing IBM WatsonX credentials.
 - **requirements.txt**: List of Python packages required for the project.
 
 ## Acknowledgments
