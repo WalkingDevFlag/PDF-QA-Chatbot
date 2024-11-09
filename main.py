@@ -1,4 +1,4 @@
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chains import RetrievalQA
 from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -8,7 +8,6 @@ from langchain_ibm import WatsonxLLM
 import os
 from dotenv import load_dotenv
 import streamlit as st
-from genai.extensions.langchain import LangChainInterface
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -18,7 +17,6 @@ watsonx_apikey = os.getenv("WATSONX_APIKEY")
 watsonx_url = os.getenv("WATSONX_URL")
 watsonx_model_id = os.getenv("WATSONX_MODEL_ID")
 watsonx_project_id = os.getenv("WATSONX_PROJECT_ID")
-pdf_path = os.getenv("PDF_PATH")
 
 llm = WatsonxLLM(
     model_id=watsonx_model_id,
@@ -26,10 +24,11 @@ llm = WatsonxLLM(
     params={"decoding_method": "greedy", "max_new_tokens": 500},
     project_id=watsonx_project_id,
 )
-
+script_dir = os.path.dirname(__file__)
+directory = os.path.join(script_dir, 'resources')
 @st.cache_resource
 def load_pdf():
-    loaders = [PyPDFLoader(pdf_path)]
+    loaders = [PyPDFDirectoryLoader(directory)]
     index = VectorstoreIndexCreator(
         embedding=HuggingFaceEmbeddings(model_name='all-MiniLM-L12-v2'),
         text_splitter=RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=0)
@@ -47,7 +46,7 @@ chain = RetrievalQA.from_chain_type(
 )
 
 # App Title
-st.title('Anju Susan George chi Replacement')
+st.title("A Student's Guide :)")
 
 # Setup a session state message variable to hold all the old messages
 if 'messages' not in st.session_state:
