@@ -93,14 +93,3 @@ pip install -r requirements.txt
 - Get you Project_id [here](https://eu-de.dataplatform.cloud.ibm.com/wx/home?context=wx)
 - [Langchain IBM watsonx.ai documentation](https://python.langchain.com/docs/integrations/llms/ibm_watsonx/)
 
-
-
-|Image Name|Extracted Text|Index|Image Link|Group Identity Name|Entity Value|
-|---|---|---|---|---|---|
-|0918LQehcw0L.jpg|NaN|130430|[https://m.media-amazon.com/images/I/918LQehcw0L.jpg](https://m.media-amazon.com/images/I/918LQehcw0L.jpg)|item_weight|180.0 gram|
-|IP171uOvyb49QL.jpg|EASYGRIP HANDLES Two sturdy soft handles for great...|124590|[https://m.media-amazon.com/images/I/71uOvyb49QL.jpg](https://m.media-amazon.com/images/I/71uOvyb49QL.jpg)|item_weight|150.0 pound|
-|IPig+271uOvyb49QL.jpg|EASYGRIP HANDLES Two sturdy soft handles for great...|124591|[https://m.media-amazon.com/images/I/71uOvyb49QL.jpg](https://m.media-amazon.com/images/I/71uOvyb49QL.jpg)|maximum_weight_recommendation|150.0 pound|
-|IMPIM+341DYfchn+tL.jpg|11.8in 11.8in TotalWireLength:5.9ft 31.5in 2.6...|5568|[https://m.media-amazon.com/images/I/41DYfchn+tL.jpg](https://m.media-amazon.com/images/I/41DYfchn+tL.jpg)|voltage|12.0 volt|
-|O441DYfchn+tL.jpg|11.8in 11.8in TotalWireLength:5.9ft 31.5in 2.6...|5569|[https://m.media-amazon.com/images/I/41DYfchn+tL.jpg](https://m.media-amazon.com/images/I/41DYfchn+tL.jpg)|item_weight|5.9 pound|
-
-
