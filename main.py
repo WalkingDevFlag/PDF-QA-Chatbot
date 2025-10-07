@@ -24,10 +24,13 @@ load_dotenv()
 
 # Configuration
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gpt-oss:20b")
+OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.7"))
+OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "-1"))
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
+RETRIEVAL_K = int(os.getenv("RETRIEVAL_K", "6"))
 
 # Directories
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -108,8 +111,8 @@ def initialize_rag_system():
             llm = OllamaLLM(
                 model=OLLAMA_MODEL,
                 base_url=OLLAMA_BASE_URL,
-                temperature=0.7,
-                num_predict=1024,  # Allow longer responses
+                temperature=OLLAMA_TEMPERATURE,
+                num_predict=OLLAMA_NUM_PREDICT,  # -1 = no limit, let model decide naturally
             )
             st.success(f"✅ Connected to Ollama model: {OLLAMA_MODEL}")
         
@@ -119,11 +122,14 @@ def initialize_rag_system():
 Use the following context from the documents to answer the question comprehensively and in detail.
 
 Instructions:
-- Provide a thorough, well-structured answer with multiple points when relevant
+- Provide a thorough, well-structured answer with appropriate depth based on the question
+- For broad questions: Give comprehensive multi-point answers covering all relevant aspects
+- For specific questions: Give focused, detailed answers without unnecessary elaboration
 - Include specific details, examples, and explanations from the context
 - Organize your response with clear sections or bullet points when appropriate
-- If the context covers multiple aspects, explain each one
+- If the context covers multiple aspects, explain each one thoroughly
 - Be informative and educational in your response
+- Stop naturally when you've fully answered the question - don't pad or cut off mid-thought
 - If you don't know something based on the context, acknowledge it, but provide what information you do have
 
 Context from documents:
@@ -144,7 +150,7 @@ Detailed Answer:"""
             chain_type="stuff",
             retriever=vectorstore.as_retriever(
                 search_type="similarity",
-                search_kwargs={"k": 6}  # Retrieve top 6 chunks for more context
+                search_kwargs={"k": RETRIEVAL_K}  # Configurable chunk retrieval
             ),
             return_source_documents=True,
             chain_type_kwargs={"prompt": PROMPT}
@@ -177,9 +183,12 @@ def main():
         st.header("⚙️ Configuration")
         st.markdown(f"**Model:** {OLLAMA_MODEL}")
         st.markdown(f"**Base URL:** {OLLAMA_BASE_URL}")
+        st.markdown(f"**Temperature:** {OLLAMA_TEMPERATURE}")
+        st.markdown(f"**Max Tokens:** {'Unlimited' if OLLAMA_NUM_PREDICT == -1 else OLLAMA_NUM_PREDICT}")
         st.markdown(f"**Embedding:** {EMBEDDING_MODEL}")
         st.markdown(f"**Chunk Size:** {CHUNK_SIZE}")
         st.markdown(f"**Chunk Overlap:** {CHUNK_OVERLAP}")
+        st.markdown(f"**Retrieval Chunks:** {RETRIEVAL_K}")
         
         st.divider()
         
