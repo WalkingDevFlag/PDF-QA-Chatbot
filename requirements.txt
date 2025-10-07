@@ -1,16 +1,16 @@
 # Core Dependencies
-langchain==0.1.0
-langchain-community==0.0.10
-langchain-ollama==0.1.0
-streamlit==1.29.0
-python-dotenv==1.0.0
+langchain
+langchain-community
+langchain-ollama
+streamlit
+python-dotenv
 
 # PDF Processing
-pypdf==3.17.4
+pypdf
 
 # Embeddings & Vector Store
-sentence-transformers==2.2.2
-chromadb==0.4.22
+sentence-transformers
+chromadb
 
 # Utilities
-requests==2.31.0
+requests
