@@ -52,8 +52,9 @@ conda-meta/
 .DS_Store
 Thumbs.db
 
-# PDF files (optional - uncomment if you don't want to commit PDFs)
-# resources/*.pdf
+# PDF files - don't commit resources
+resources/*.pdf
+resources/
 
 # Credentials
 Conda env.txt
