@@ -58,10 +58,10 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ollama serve
 
 # In a new terminal, pull a model
-ollama pull llama3.2
+ollama pull gpt-oss:20b
 
 # Test the model
-ollama run llama3.2 "Hello, how are you?"
+ollama run gpt-oss:20b "Hello, how are you?"
 ```
 
 ## 🐍 Python Environment Setup
@@ -254,22 +254,22 @@ pip install langchain
 
 ## 🎯 Model Recommendations
 
-### For Speed (Low-End Hardware)
-- **phi3** - Very fast, good quality
+### For Best Quality (Recommended - Current Setup)
+- **gpt-oss:20b** - Excellent quality, 20B parameters
   ```bash
-  ollama pull phi3
+  ollama pull gpt-oss:20b
   ```
 
-### For Balance (Recommended)
+### For Balance (Medium Hardware)
 - **llama3.2** - Great balance of speed and quality
   ```bash
   ollama pull llama3.2
   ```
 
-### For Quality (High-End Hardware)
-- **llama3.1** - Better quality, slower
+### For Speed (Low-End Hardware)
+- **phi3** - Very fast, good quality
   ```bash
-  ollama pull llama3.1
+  ollama pull phi3
   ```
 
 ### For Specific Use Cases

@@ -38,11 +38,11 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ### Step 2: Pull an Ollama Model
 
 ```bash
-# Pull the default model (Llama 3.2)
-ollama pull llama3.2
+# Pull the default model (GPT-OSS 20B)
+ollama pull gpt-oss:20b
 
 # Or try other models
-ollama pull llama3.1
+ollama pull llama3.2
 ollama pull mistral
 ollama pull phi3
 ```
@@ -99,7 +99,7 @@ cp .env.example .env
 Edit `.env` to change default settings (optional):
 ```plaintext
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
+OLLAMA_MODEL=gpt-oss:20b
 EMBEDDING_MODEL=all-MiniLM-L6-v2
 CHUNK_SIZE=1000
 CHUNK_OVERLAP=200
@@ -162,7 +162,8 @@ PDF-QA-Chatbot/
 ### Available Ollama Models
 
 Popular models you can use:
-- `llama3.2` (default) - Fast and efficient
+- `gpt-oss:20b` (default) - High quality, 20B parameter model
+- `llama3.2` - Fast and efficient
 - `llama3.1` - More capable, larger model
 - `mistral` - Great balance of speed and quality
 - `phi3` - Lightweight and fast
@@ -202,7 +203,7 @@ ollama serve
 ### "Model not found"
 ```bash
 # Pull the model first
-ollama pull llama3.2
+ollama pull gpt-oss:20b
 ```
 
 ### Slow Performance
@@ -229,7 +230,7 @@ ollama pull llama3.2
 
 ## 🤝 Contributing
 
-Contributions are welcome! This is a Hacktoberfest project.
+Contributions are welcome!
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
