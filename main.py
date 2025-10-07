@@ -109,19 +109,29 @@ def initialize_rag_system():
                 model=OLLAMA_MODEL,
                 base_url=OLLAMA_BASE_URL,
                 temperature=0.7,
+                num_predict=1024,  # Allow longer responses
             )
             st.success(f"✅ Connected to Ollama model: {OLLAMA_MODEL}")
         
         # Create custom prompt template
-        prompt_template = """You are a helpful AI assistant. Use the following pieces of context to answer the question at the end.
-If you don't know the answer based on the context, just say that you don't know, don't try to make up an answer.
-Be concise and clear in your responses.
+        prompt_template = """You are a knowledgeable AI assistant specializing in analyzing and explaining document content.
 
-Context: {context}
+Use the following context from the documents to answer the question comprehensively and in detail.
+
+Instructions:
+- Provide a thorough, well-structured answer with multiple points when relevant
+- Include specific details, examples, and explanations from the context
+- Organize your response with clear sections or bullet points when appropriate
+- If the context covers multiple aspects, explain each one
+- Be informative and educational in your response
+- If you don't know something based on the context, acknowledge it, but provide what information you do have
+
+Context from documents:
+{context}
 
 Question: {question}
 
-Answer: """
+Detailed Answer:"""
         
         PROMPT = PromptTemplate(
             template=prompt_template,
@@ -133,7 +143,8 @@ Answer: """
             llm=llm,
             chain_type="stuff",
             retriever=vectorstore.as_retriever(
-                search_kwargs={"k": 3}  # Retrieve top 3 most relevant chunks
+                search_type="similarity",
+                search_kwargs={"k": 6}  # Retrieve top 6 chunks for more context
             ),
             return_source_documents=True,
             chain_type_kwargs={"prompt": PROMPT}
