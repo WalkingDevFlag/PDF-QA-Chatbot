@@ -54,7 +54,8 @@ Thumbs.db
 
 # PDF files - don't commit resources
 resources/*.pdf
-resources/
+resources/*
+!resources/.gitkeep
 
 # Credentials
 Conda env.txt
