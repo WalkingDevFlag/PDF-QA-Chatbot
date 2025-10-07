@@ -5,6 +5,7 @@ A local, privacy-focused RAG application for PDF question answering
 
 import os
 import glob
+import time
 from pathlib import Path
 from typing import List
 
@@ -18,6 +19,7 @@ from langchain_ollama import OllamaLLM
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from langchain.callbacks.base import BaseCallbackHandler
 
 # Load environment variables
 load_dotenv()
@@ -36,6 +38,18 @@ RETRIEVAL_K = int(os.getenv("RETRIEVAL_K", "6"))
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCES_DIR = os.path.join(SCRIPT_DIR, 'resources')
 VECTOR_DB_DIR = os.path.join(SCRIPT_DIR, 'chroma_db')
+
+
+class StreamHandler(BaseCallbackHandler):
+    """Callback handler for streaming responses to Streamlit"""
+    def __init__(self, container, initial_text=""):
+        self.container = container
+        self.text = initial_text
+
+    def on_llm_new_token(self, token: str, **kwargs) -> None:
+        """Run when LLM generates a new token"""
+        self.text += token
+        self.container.markdown(self.text + "▌")
 
 
 def check_ollama_connection():
@@ -240,35 +254,44 @@ def main():
         # Add user message to history
         st.session_state.messages.append({'role': 'user', 'content': prompt})
         
-        # Generate response
+        # Generate response with streaming
         with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                try:
-                    # Get response from QA chain
-                    result = qa_chain.invoke({"query": prompt})
-                    response = result['result']
-                    
-                    # Display response
-                    st.markdown(response)
-                    
-                    # Optional: Show source documents
-                    with st.expander("📄 View Source Documents"):
-                        for i, doc in enumerate(result.get('source_documents', []), 1):
-                            st.markdown(f"**Source {i}:**")
-                            st.text(doc.page_content[:300] + "...")
-                            st.markdown(f"*Page: {doc.metadata.get('page', 'N/A')}*")
-                            st.divider()
-                    
-                    # Add assistant message to history
-                    st.session_state.messages.append({
-                        'role': 'assistant',
-                        'content': response
-                    })
+            try:
+                # Create placeholder for streaming
+                message_placeholder = st.empty()
                 
-                except Exception as e:
-                    error_msg = f"❌ Error generating response: {str(e)}"
-                    st.error(error_msg)
-                    st.exception(e)
+                # Create streaming callback handler
+                stream_handler = StreamHandler(message_placeholder)
+                
+                # Get response from QA chain with streaming
+                with st.spinner("🔍 Searching documents..."):
+                    result = qa_chain.invoke(
+                        {"query": prompt},
+                        config={"callbacks": [stream_handler]}
+                    )
+                    response = result['result']
+                
+                # Final update without cursor
+                message_placeholder.markdown(response)
+                
+                # Optional: Show source documents
+                with st.expander("📄 View Source Documents"):
+                    for i, doc in enumerate(result.get('source_documents', []), 1):
+                        st.markdown(f"**Source {i}:**")
+                        st.text(doc.page_content[:300] + "...")
+                        st.markdown(f"*Page: {doc.metadata.get('page', 'N/A')}*")
+                        st.divider()
+                
+                # Add assistant message to history
+                st.session_state.messages.append({
+                    'role': 'assistant',
+                    'content': response
+                })
+            
+            except Exception as e:
+                error_msg = f"❌ Error generating response: {str(e)}"
+                st.error(error_msg)
+                st.exception(e)
 
 
 if __name__ == "__main__":
