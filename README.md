@@ -104,6 +104,56 @@ CHUNK_OVERLAP=200           # Context overlap
 | Slow performance | Use smaller model (`llama3.2` or `phi3`) |
 | Out of memory | Reduce `CHUNK_SIZE` in `.env` |
 
+## 🧪 Testing & CI/CD
+
+### Running Tests
+
+```bash
+# Install dev dependencies
+pip install -r requirements-dev.txt
+
+# Run all tests
+pytest -v
+
+# Run with coverage
+pytest -v --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_pdf_processing.py -v
+```
+
+### Test Structure
+
+- `tests/test_pdf_processing.py` - Unit tests for PDF loading and chunking
+- `tests/test_ollama_integration.py` - Unit tests for Ollama connection
+- `tests/test_integration.py` - Integration tests for RAG pipeline
+
+### CI/CD Pipeline
+
+The project includes GitHub Actions workflows that:
+- ✅ Run on `push` and `pull_request` for `main`, `develop`, and other branches
+- ✅ Test across multiple OS (Ubuntu, Windows, macOS) and Python versions (3.10, 3.11)
+- ✅ Run linting (flake8, black, pylint)
+- ✅ Run type checking (mypy)
+- ✅ Generate coverage reports
+- ✅ Security scanning (bandit)
+
+### Code Quality
+
+```bash
+# Format code
+black .
+
+# Lint code
+flake8 .
+
+# Type check
+mypy main.py --ignore-missing-imports
+
+# Run pylint
+pylint main.py
+```
+
 ## 📝 License
 
 MIT License - see LICENSE file for details

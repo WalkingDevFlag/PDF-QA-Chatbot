@@ -48,6 +48,15 @@ conda-meta/
 # Streamlit
 .streamlit/
 
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
+.tox/
+
 # OS
 .DS_Store
 Thumbs.db

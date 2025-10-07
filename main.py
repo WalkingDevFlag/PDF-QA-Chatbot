@@ -75,60 +75,45 @@ def initialize_rag_system():
         # Check for PDF files
         pdf_files = check_pdf_files()
         if not pdf_files:
-            st.error("⚠️ No PDF files found in the 'resources' folder!")
-            st.info("Please add PDF files to the 'resources' directory and restart the app.")
-            st.stop()
-        
-        st.info(f"📄 Found {len(pdf_files)} PDF file(s): {', '.join([Path(f).name for f in pdf_files])}")
+            return None, None, "No PDF files found in the 'resources' folder!"
         
         # Load PDFs
-        with st.spinner("📖 Loading PDF documents..."):
-            loader = PyPDFDirectoryLoader(RESOURCES_DIR)
-            documents = loader.load()
-            
-            if not documents:
-                st.error("Failed to load any documents from PDFs!")
-                st.stop()
-            
-            st.success(f"✅ Loaded {len(documents)} pages from PDFs")
+        loader = PyPDFDirectoryLoader(RESOURCES_DIR)
+        documents = loader.load()
+        
+        if not documents:
+            return None, None, "Failed to load any documents from PDFs!"
         
         # Split documents into chunks
-        with st.spinner("✂️ Splitting documents into chunks..."):
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=CHUNK_SIZE,
-                chunk_overlap=CHUNK_OVERLAP,
-                length_function=len,
-                separators=["\n\n", "\n", " ", ""]
-            )
-            chunks = text_splitter.split_documents(documents)
-            st.success(f"✅ Created {len(chunks)} text chunks")
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=CHUNK_SIZE,
+            chunk_overlap=CHUNK_OVERLAP,
+            length_function=len,
+            separators=["\n\n", "\n", " ", ""]
+        )
+        chunks = text_splitter.split_documents(documents)
         
         # Create embeddings
-        with st.spinner("🧮 Creating embeddings..."):
-            embeddings = HuggingFaceEmbeddings(
-                model_name=EMBEDDING_MODEL,
-                model_kwargs={'device': 'cpu'},
-                encode_kwargs={'normalize_embeddings': True}
-            )
+        embeddings = HuggingFaceEmbeddings(
+            model_name=EMBEDDING_MODEL,
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': True}
+        )
         
         # Create vector store
-        with st.spinner("💾 Building vector database..."):
-            vectorstore = Chroma.from_documents(
-                documents=chunks,
-                embedding=embeddings,
-                persist_directory=VECTOR_DB_DIR
-            )
-            st.success("✅ Vector database created successfully!")
+        vectorstore = Chroma.from_documents(
+            documents=chunks,
+            embedding=embeddings,
+            persist_directory=VECTOR_DB_DIR
+        )
         
         # Initialize Ollama LLM
-        with st.spinner(f"🤖 Connecting to Ollama ({OLLAMA_MODEL})..."):
-            llm = OllamaLLM(
-                model=OLLAMA_MODEL,
-                base_url=OLLAMA_BASE_URL,
-                temperature=OLLAMA_TEMPERATURE,
-                num_predict=OLLAMA_NUM_PREDICT,  # -1 = no limit, let model decide naturally
-            )
-            st.success(f"✅ Connected to Ollama model: {OLLAMA_MODEL}")
+        llm = OllamaLLM(
+            model=OLLAMA_MODEL,
+            base_url=OLLAMA_BASE_URL,
+            temperature=OLLAMA_TEMPERATURE,
+            num_predict=OLLAMA_NUM_PREDICT,  # -1 = no limit, let model decide naturally
+        )
         
         # Create custom prompt template
         prompt_template = """You are a knowledgeable AI assistant specializing in analyzing and explaining document content.
@@ -170,12 +155,20 @@ Detailed Answer:"""
             chain_type_kwargs={"prompt": PROMPT}
         )
         
-        return qa_chain, vectorstore
+        # Return qa_chain, vectorstore, and metadata
+        pdf_count = len(pdf_files)
+        doc_count = len(documents)
+        chunk_count = len(chunks)
+        
+        return qa_chain, vectorstore, {
+            'pdf_count': pdf_count,
+            'pdf_names': [Path(f).name for f in pdf_files],
+            'doc_count': doc_count,
+            'chunk_count': chunk_count
+        }
     
     except Exception as e:
-        st.error(f"❌ Error initializing RAG system: {str(e)}")
-        st.exception(e)
-        st.stop()
+        return None, None, f"Error: {str(e)}"
 
 
 def main():
@@ -234,7 +227,25 @@ def main():
         st.code("ollama serve", language="bash")
         st.stop()
     
-    qa_chain, vectorstore = initialize_rag_system()
+    # Initialize with progress indicators
+    with st.spinner("🚀 Initializing RAG system..."):
+        result = initialize_rag_system()
+    
+    # Check for errors
+    if result[0] is None:
+        st.error(f"⚠️ {result[2]}")
+        st.info("Please add PDF files to the 'resources' directory and restart the app.")
+        st.stop()
+    
+    qa_chain, vectorstore, metadata = result
+    
+    # Show toast notifications only on first load (not from cache)
+    if 'initialized' not in st.session_state:
+        st.toast(f"📄 Found {metadata['pdf_count']} PDF file(s): {', '.join(metadata['pdf_names'])}", icon="📄")
+        st.toast(f"✅ Loaded {metadata['doc_count']} pages from PDFs", icon="✅")
+        st.toast(f"✅ Created {metadata['chunk_count']} text chunks", icon="✂️")
+        st.toast(f"✅ Connected to Ollama model: {OLLAMA_MODEL}", icon="🤖")
+        st.session_state.initialized = True
     
     # Initialize chat history
     if 'messages' not in st.session_state:

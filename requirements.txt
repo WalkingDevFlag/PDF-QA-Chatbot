@@ -14,3 +14,13 @@ chromadb
 
 # Utilities
 requests
+
+# Development Dependencies
+pytest
+pytest-cov
+pytest-asyncio
+pytest-mock
+black
+flake8
+mypy
+pylint
