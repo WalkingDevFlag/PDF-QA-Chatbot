@@ -1,35 +1,26 @@
-Conda env
+# Conda Environment Setup for PDF-QA-Chatbot (Ollama Version)
 
-1) conda create --name watsonx python=3.10
+## Quick Setup
+1) conda create --name pdf-qa python=3.11
+2) conda activate pdf-qa
+3) pip install -r requirements.txt
 
-2) conda activate watsonx
+## Individual Package Installation (if needed)
+3) pip install langchain==0.1.0
+4) pip install langchain-community==0.0.10
+5) pip install langchain-ollama==0.1.0
+6) pip install streamlit==1.29.0
+7) pip install pypdf==3.17.4
+8) pip install sentence-transformers==2.2.2
+9) pip install chromadb==0.4.22
+10) pip install python-dotenv==1.0.0
+11) pip install requests==2.31.0
 
-3) pip install langchain 
+## Ollama Setup
+- Download and install Ollama from: https://ollama.ai/
+- Pull a model: ollama pull llama3.2
+- Start Ollama server: ollama serve
 
-4) pip install streamlit
-
-5) pip install ibm-watson-machine-learning
-
-6) pip install wxai-langchain==0.0.4
-
-7) pip install ibm-generative-ai[langchain]
-
-8) pip install langchain-community
-
-9) pip install langchain-ibm
-
-10) pip install ipykernel 
-
-11) python -m ipykernel install --user --name watsonx
-
-12) pip install pypdf
-
-13) pip install sentence-transformers
-
-14) pip install langchain-huggingface
-
-
-WatsonX:
-API-Key: PexP1lzw90yxJF7ouyKrlX4F2mn4-xKswqe5aKSs7qU_
-Project-ID: dada0dd9-2144-4a55-8a58-5ed9e478545e
-URL: https://eu-de.ml.cloud.ibm.com
+## Note
+This version uses Ollama for local AI inference - no API keys required!
+All credentials from the old WatsonX version have been removed for security.

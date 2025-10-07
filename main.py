@@ -1,72 +1,255 @@
-from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain.indexes import VectorstoreIndexCreator
-from langchain.chains import RetrievalQA
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+"""
+PDF QA Chatbot with Ollama Integration
+A local, privacy-focused RAG application for PDF question answering
+"""
 
-from langchain_ibm import WatsonxLLM
 import os
-from dotenv import load_dotenv
-import streamlit as st
+import glob
+from pathlib import Path
+from typing import List
 
-# Load environment variables from the .env file
+import streamlit as st
+from dotenv import load_dotenv
+
+from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_ollama import OllamaLLM
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+
+# Load environment variables
 load_dotenv()
 
-# Retrieve environment variables
-watsonx_apikey = os.getenv("WATSONX_APIKEY")
-watsonx_url = os.getenv("WATSONX_URL")
-watsonx_model_id = os.getenv("WATSONX_MODEL_ID")
-watsonx_project_id = os.getenv("WATSONX_PROJECT_ID")
+# Configuration
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
 
-llm = WatsonxLLM(
-    model_id=watsonx_model_id,
-    url=watsonx_url,
-    params={"decoding_method": "greedy", "max_new_tokens": 500},
-    project_id=watsonx_project_id,
-)
-script_dir = os.path.dirname(__file__)
-directory = os.path.join(script_dir, 'resources')
+# Directories
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+RESOURCES_DIR = os.path.join(SCRIPT_DIR, 'resources')
+VECTOR_DB_DIR = os.path.join(SCRIPT_DIR, 'chroma_db')
+
+
+def check_ollama_connection():
+    """Check if Ollama is running and accessible"""
+    try:
+        import requests
+        response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5)
+        return response.status_code == 200
+    except Exception as e:
+        return False
+
+
+def check_pdf_files() -> List[str]:
+    """Check for PDF files in resources directory"""
+    pdf_files = glob.glob(os.path.join(RESOURCES_DIR, "*.pdf"))
+    return pdf_files
+
+
 @st.cache_resource
-def load_pdf():
-    loaders = [PyPDFDirectoryLoader(directory)]
-    index = VectorstoreIndexCreator(
-        embedding=HuggingFaceEmbeddings(model_name='all-MiniLM-L12-v2'),
-        text_splitter=RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=0)
-    ).from_loaders(loaders)
-    return index
+def initialize_rag_system():
+    """Initialize the RAG system with embeddings and vector store"""
+    try:
+        # Check for PDF files
+        pdf_files = check_pdf_files()
+        if not pdf_files:
+            st.error("⚠️ No PDF files found in the 'resources' folder!")
+            st.info("Please add PDF files to the 'resources' directory and restart the app.")
+            st.stop()
+        
+        st.info(f"📄 Found {len(pdf_files)} PDF file(s): {', '.join([Path(f).name for f in pdf_files])}")
+        
+        # Load PDFs
+        with st.spinner("📖 Loading PDF documents..."):
+            loader = PyPDFDirectoryLoader(RESOURCES_DIR)
+            documents = loader.load()
+            
+            if not documents:
+                st.error("Failed to load any documents from PDFs!")
+                st.stop()
+            
+            st.success(f"✅ Loaded {len(documents)} pages from PDFs")
+        
+        # Split documents into chunks
+        with st.spinner("✂️ Splitting documents into chunks..."):
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=CHUNK_SIZE,
+                chunk_overlap=CHUNK_OVERLAP,
+                length_function=len,
+                separators=["\n\n", "\n", " ", ""]
+            )
+            chunks = text_splitter.split_documents(documents)
+            st.success(f"✅ Created {len(chunks)} text chunks")
+        
+        # Create embeddings
+        with st.spinner("🧮 Creating embeddings..."):
+            embeddings = HuggingFaceEmbeddings(
+                model_name=EMBEDDING_MODEL,
+                model_kwargs={'device': 'cpu'},
+                encode_kwargs={'normalize_embeddings': True}
+            )
+        
+        # Create vector store
+        with st.spinner("💾 Building vector database..."):
+            vectorstore = Chroma.from_documents(
+                documents=chunks,
+                embedding=embeddings,
+                persist_directory=VECTOR_DB_DIR
+            )
+            st.success("✅ Vector database created successfully!")
+        
+        # Initialize Ollama LLM
+        with st.spinner(f"🤖 Connecting to Ollama ({OLLAMA_MODEL})..."):
+            llm = OllamaLLM(
+                model=OLLAMA_MODEL,
+                base_url=OLLAMA_BASE_URL,
+                temperature=0.7,
+            )
+            st.success(f"✅ Connected to Ollama model: {OLLAMA_MODEL}")
+        
+        # Create custom prompt template
+        prompt_template = """You are a helpful AI assistant. Use the following pieces of context to answer the question at the end.
+If you don't know the answer based on the context, just say that you don't know, don't try to make up an answer.
+Be concise and clear in your responses.
 
-index = load_pdf()
+Context: {context}
 
-# Create a QnA chain
-chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type='stuff',
-    retriever=index.vectorstore.as_retriever(),
-    input_key='question'
-)
+Question: {question}
 
-# App Title
-st.title("A Student's Guide :)")
+Answer: """
+        
+        PROMPT = PromptTemplate(
+            template=prompt_template,
+            input_variables=["context", "question"]
+        )
+        
+        # Create QA chain
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            chain_type="stuff",
+            retriever=vectorstore.as_retriever(
+                search_kwargs={"k": 3}  # Retrieve top 3 most relevant chunks
+            ),
+            return_source_documents=True,
+            chain_type_kwargs={"prompt": PROMPT}
+        )
+        
+        return qa_chain, vectorstore
+    
+    except Exception as e:
+        st.error(f"❌ Error initializing RAG system: {str(e)}")
+        st.exception(e)
+        st.stop()
 
-# Setup a session state message variable to hold all the old messages
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
 
-# Display all the historical messages
-for message in st.session_state.messages:
-    st.chat_message(message['role']).markdown(message['content'])
+def main():
+    """Main Streamlit application"""
+    
+    # Page configuration
+    st.set_page_config(
+        page_title="PDF QA Chatbot (Ollama)",
+        page_icon="📚",
+        layout="wide"
+    )
+    
+    # Title and description
+    st.title("📚 PDF QA Chatbot with Ollama")
+    st.markdown("*Ask questions about your PDF documents using local AI models*")
+    
+    # Sidebar with information
+    with st.sidebar:
+        st.header("⚙️ Configuration")
+        st.markdown(f"**Model:** {OLLAMA_MODEL}")
+        st.markdown(f"**Base URL:** {OLLAMA_BASE_URL}")
+        st.markdown(f"**Embedding:** {EMBEDDING_MODEL}")
+        st.markdown(f"**Chunk Size:** {CHUNK_SIZE}")
+        st.markdown(f"**Chunk Overlap:** {CHUNK_OVERLAP}")
+        
+        st.divider()
+        
+        # Check Ollama connection
+        if check_ollama_connection():
+            st.success("✅ Ollama is running")
+        else:
+            st.error("❌ Ollama is not running")
+            st.markdown("**Start Ollama:**")
+            st.code("ollama serve", language="bash")
+            st.markdown(f"**Pull the model:**")
+            st.code(f"ollama pull {OLLAMA_MODEL}", language="bash")
+        
+        st.divider()
+        
+        # PDF files info
+        pdf_files = check_pdf_files()
+        st.markdown(f"**PDF Files:** {len(pdf_files)}")
+        for pdf in pdf_files:
+            st.markdown(f"- {Path(pdf).name}")
+        
+        if st.button("🔄 Reload Documents"):
+            st.cache_resource.clear()
+            st.rerun()
+    
+    # Initialize RAG system
+    if not check_ollama_connection():
+        st.warning("⚠️ Please start Ollama server to use this application.")
+        st.code("ollama serve", language="bash")
+        st.stop()
+    
+    qa_chain, vectorstore = initialize_rag_system()
+    
+    # Initialize chat history
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
+    
+    # Display chat history
+    for message in st.session_state.messages:
+        with st.chat_message(message['role']):
+            st.markdown(message['content'])
+    
+    # Chat input
+    if prompt := st.chat_input("Ask a question about your documents..."):
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Add user message to history
+        st.session_state.messages.append({'role': 'user', 'content': prompt})
+        
+        # Generate response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                try:
+                    # Get response from QA chain
+                    result = qa_chain.invoke({"query": prompt})
+                    response = result['result']
+                    
+                    # Display response
+                    st.markdown(response)
+                    
+                    # Optional: Show source documents
+                    with st.expander("📄 View Source Documents"):
+                        for i, doc in enumerate(result.get('source_documents', []), 1):
+                            st.markdown(f"**Source {i}:**")
+                            st.text(doc.page_content[:300] + "...")
+                            st.markdown(f"*Page: {doc.metadata.get('page', 'N/A')}*")
+                            st.divider()
+                    
+                    # Add assistant message to history
+                    st.session_state.messages.append({
+                        'role': 'assistant',
+                        'content': response
+                    })
+                
+                except Exception as e:
+                    error_msg = f"❌ Error generating response: {str(e)}"
+                    st.error(error_msg)
+                    st.exception(e)
 
-# Build a prompt input template to display the prompts
-prompt = st.chat_input('Pass Your Prompt Here')
 
-if prompt:
-    # Display the prompt
-    st.chat_message('user').markdown(prompt)
-    # Store the user prompt in state
-    st.session_state.messages.append({'role': 'user', 'content': prompt})
-    # Send the user prompt to the llm
-    response = chain.run(prompt) 
-    # Show the llm response
-    st.chat_message('assistant').markdown(response)
-    # Store the llm response in state
-    st.session_state.messages.append({'role': 'assistant', 'content': response})
+if __name__ == "__main__":
+    main()

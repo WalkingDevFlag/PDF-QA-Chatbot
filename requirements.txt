@@ -1,12 +1,16 @@
-langchain
-streamlit
-ibm-watson-machine-learning
-wxai-langchain==0.0.4
-ibm-generative-ai[langchain]
-langchain-community
-langchain-ibm
-ipykernel
-pypdf
-sentence-transformers
-langchain-huggingface
-python-dotenv
+# Core Dependencies
+langchain==0.1.0
+langchain-community==0.0.10
+langchain-ollama==0.1.0
+streamlit==1.29.0
+python-dotenv==1.0.0
+
+# PDF Processing
+pypdf==3.17.4
+
+# Embeddings & Vector Store
+sentence-transformers==2.2.2
+chromadb==0.4.22
+
+# Utilities
+requests==2.31.0
